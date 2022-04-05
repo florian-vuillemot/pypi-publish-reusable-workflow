@@ -1,0 +1,73 @@
+# This workflow will upload a Python Package using Twine when a release is created
+# For more information see: https://help.github.com/en/actions/language-and-framework-guides/using-python-with-github-actions#publishing-to-package-registries
+
+# This workflow uses actions that are not certified by GitHub.
+# They are provided by a third-party and are governed by
+# separate terms of service, privacy policy, and support
+# documentation.
+
+name: Publish a package to PyPI
+
+on:
+  workflow_call:
+    inputs:
+      package_name:
+        type: string
+        required: true
+        description: The name of the package to publish
+    secrets:
+      TEST_PYPI_API_TOKEN:
+        required: true
+        description: Test PyPI API Token
+      TEST_PYPI_INSTALL_URL:
+        required: true
+        description: Test PyPI Install URL
+      TEST_PYPI_PUBLISH_URL:
+        required: true
+        description: Test PyPI Publish URL
+      PYPI_API_TOKEN:
+        required: true
+        description: PyPI API Token
+
+jobs:
+  publish:
+    strategy:
+      matrix:
+        python-versions: [3.8]
+        os: [ubuntu-18.04]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-versions }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install build
+
+      - name: Build package
+        run: python -m build
+
+      - name: Publish ${{ inputs.package_name }} to TestPyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          user: __token__
+          password: ${{ secrets.TEST_PYPI_API_TOKEN}}
+          repository_url: ${{ secrets.TEST_PYPI_PUBLISH_URL }}
+
+      - name: Install ${{ inputs.package_name }} from TestPyPI
+        run: pip install --index-url ${{ secrets.TEST_PYPI_INSTALL_URL }} ${{ inputs.package_name }}
+
+      - name: Run tests
+        run: |
+          rm -r ${{ inputs.package_name }}
+          pip install pytest pytest-mock
+          pytest
+
+      - name: Publish ${{ inputs.package_name }} to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          user: __token__
+          password: ${{ secrets.PYPI_API_TOKEN }}
