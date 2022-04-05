@@ -15,19 +15,9 @@ on:
         type: string
         required: true
         description: The name of the package to publish
-    secrets:
-      TEST_PYPI_API_TOKEN:
+      environment:
+        type: string
         required: true
-        description: Test PyPI API Token
-      TEST_PYPI_INSTALL_URL:
-        required: true
-        description: Test PyPI Install URL
-      TEST_PYPI_PUBLISH_URL:
-        required: true
-        description: Test PyPI Publish URL
-      PYPI_API_TOKEN:
-        required: true
-        description: PyPI API Token
 
 jobs:
   publish:
@@ -36,6 +26,7 @@ jobs:
         python-versions: [3.8]
         os: [ubuntu-18.04]
     runs-on: ${{ matrix.os }}
+    environment: ${{ inputs.environment }}
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v2
